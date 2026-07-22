@@ -1,17 +1,22 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
-import store
+import models
+from db import get_db
 from schemas import UpdateSettingsRequest
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
 
 @router.get("")
-def get_settings():
-    return store.settings
+def get_settings(db: Session = Depends(get_db)):
+    row = db.query(models.PlatformSettings).filter(models.PlatformSettings.id == 1).first()
+    return {"advanceFeePercent": row.advanceFeePercent}
 
 
 @router.patch("")
-def update_settings(payload: UpdateSettingsRequest):
-    store.settings["advanceFeePercent"] = payload.advanceFeePercent
-    return store.settings
+def update_settings(payload: UpdateSettingsRequest, db: Session = Depends(get_db)):
+    row = db.query(models.PlatformSettings).filter(models.PlatformSettings.id == 1).first()
+    row.advanceFeePercent = payload.advanceFeePercent
+    db.commit()
+    return {"advanceFeePercent": row.advanceFeePercent}

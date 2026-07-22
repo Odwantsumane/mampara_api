@@ -1,20 +1,10 @@
 """
-In-memory "database" for the Mampara API.
-
-No real database yet — everything lives in plain Python lists/dicts at module
-scope, seeded with dummy data, and mutated directly by the routers. Restarting
-the server resets everything back to the seed state. Swap these functions for
-real persistence later without changing any router code.
+Raw dummy content used to seed the database the first time it's empty.
+Same values that used to live directly in store.py's in-memory lists/dicts —
+now just the seed, not the source of truth (MySQL is).
 """
 
-import random
-import time
-
-# ---------------------------------------------------------------------------
-# Users
-# ---------------------------------------------------------------------------
-
-users: list[dict] = [
+users = [
     {
         "id": "usr_admin_1",
         "email": "sarah.jenkins@mampara.co.za",
@@ -51,31 +41,7 @@ users: list[dict] = [
     },
 ]
 
-# token -> user id
-sessions: dict[str, str] = {}
-
-
-def find_user_by_email(email: str) -> dict | None:
-    return next((u for u in users if u["email"].lower() == email.lower()), None)
-
-
-def find_user_by_id(user_id: str) -> dict | None:
-    return next((u for u in users if u["id"] == user_id), None)
-
-
-def to_public_user(user: dict) -> dict:
-    return {k: v for k, v in user.items() if k != "password"}
-
-
-def make_token(user_id: str) -> str:
-    return f"mampara.{user_id}.{random.randint(10 ** 9, 10 ** 10 - 1):x}"
-
-
-# ---------------------------------------------------------------------------
-# Dashboard copy
-# ---------------------------------------------------------------------------
-
-dashboard_copy: dict = {
+dashboard_copy = {
     "admin": {
         "dashboardTitle": "Dashboard Overview",
         "dashboardSubtitle": "Welcome back to Mampara, here is your payday advance book performance.",
@@ -129,18 +95,18 @@ dashboard_copy: dict = {
     },
 }
 
-trend_chart_data: dict = {
+trend_chart_data = {
     "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
     "values": [3200, 4100, 3800, 4600, 5200, 4900, 5600],
     "label": "Weekly Disbursement Volume (R)",
 }
 
-allocation_chart_data: dict = {
+allocation_chart_data = {
     "labels": ["New Advances", "Repeat Borrowers", "Rolled Over", "Settled Early"],
     "values": [45, 30, 15, 10],
 }
 
-public_teaser: dict = {
+public_teaser = {
     "headline": "Get up to R 1,000 before payday — approved in minutes.",
     "sub": "Sign in or create a free account to see your personal advance offer, repayment date, and credit score.",
     "sampleAdvance": "R 500",
@@ -153,11 +119,7 @@ public_teaser: dict = {
     "allocationValues": [45, 30, 15, 10],
 }
 
-# ---------------------------------------------------------------------------
-# Advances (payday advance book)
-# ---------------------------------------------------------------------------
-
-advances: list[dict] = [
+advances = [
     {
         "id": "#ADV-2026-892", "borrower": "Sipho Dlamini", "principal": "R 650.00", "fee": "15% (R 97.50)",
         "due": "Due in 9 days", "status": "Performing", "statusIcon": "bi-check-circle-fill", "statusClass": "success",
@@ -180,16 +142,7 @@ advances: list[dict] = [
     },
 ]
 
-
-def next_advance_id() -> str:
-    return f"#ADV-2026-{random.randint(100, 999)}"
-
-
-# ---------------------------------------------------------------------------
-# KYC queue
-# ---------------------------------------------------------------------------
-
-kyc_queue: list[dict] = [
+kyc_queue = [
     {
         "key": "id_mock",
         "category": "South African ID Document",
@@ -208,16 +161,7 @@ kyc_queue: list[dict] = [
     },
 ]
 
-
-def next_kyc_key() -> str:
-    return f"runtime_{int(time.time() * 1000)}"
-
-
-# ---------------------------------------------------------------------------
-# Billing (plans, payment methods, invoices)
-# ---------------------------------------------------------------------------
-
-billing: dict = {
+billing = {
     "admin": {
         "planName": "Growth Tier",
         "planPrice": "R 249/mo",
@@ -256,27 +200,7 @@ billing: dict = {
     },
 }
 
-
-def next_payment_method_id() -> str:
-    return f"pm_{int(time.time() * 1000)}"
-
-
-def detect_card_brand(card_number: str) -> str:
-    digits = "".join(ch for ch in str(card_number) if ch.isdigit())
-    if digits.startswith("4"):
-        return "Visa"
-    if digits[:2] in {"51", "52", "53", "54", "55"}:
-        return "Mastercard"
-    if digits[:2] in {"34", "37"}:
-        return "Amex"
-    return "Card"
-
-
-# ---------------------------------------------------------------------------
-# Credit bureau
-# ---------------------------------------------------------------------------
-
-credit_bureau_result: dict = {
+credit_bureau_result = {
     "name": "Sipho Dlamini",
     "idNumber": "8805125890082",
     "riskLabel": "Low Risk",
@@ -288,8 +212,4 @@ credit_bureau_result: dict = {
     "recommendedMaxAdvance": "R 1,000.00",
 }
 
-# ---------------------------------------------------------------------------
-# Platform settings
-# ---------------------------------------------------------------------------
-
-settings: dict = {"advanceFeePercent": 15}
+default_settings = {"advanceFeePercent": 15}
