@@ -1,11 +1,8 @@
-import time
-
 from fastapi import APIRouter, Depends, Header, HTTPException
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-import models
-import utils
+import crud.users as users_crud
+from auth.userAuthentication import create_access_token, decode_user_id, hash_password
 from db import get_db
 from schemas import LoginRequest, SignupRequest
 from serializers import user_to_dict
@@ -21,34 +18,28 @@ def _extract_token(authorization: str | None) -> str | None:
     return authorization
 
 
-def _find_by_email(db: Session, email: str) -> models.User | None:
-    return db.query(models.User).filter(func.lower(models.User.email) == email.lower()).first()
-
-
 @router.post("/login")
 def login(payload: LoginRequest, db: Session = Depends(get_db)):
-    user = _find_by_email(db, payload.email)
-    if not user or user.password != payload.password:
+    user = users_crud.authenticate_user(db, payload.email, payload.password)
+    if not user:
         raise HTTPException(status_code=401, detail="Incorrect email or password.")
-    token = utils.make_token(user.id)
-    db.add(models.Session(token=token, userId=user.id))
-    db.commit()
+    token = create_access_token({"sub": user.id})
     return {"token": token, "user": user_to_dict(user)}
 
 
 @router.post("/signup")
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
-    if _find_by_email(db, payload.email):
+    if users_crud.get_user_by_email(db, payload.email):
         raise HTTPException(status_code=409, detail="An account with that email already exists.")
 
     name_parts = payload.name.strip().split(" ")
     first_name = name_parts[0] if name_parts and name_parts[0] else "New"
     surname = " ".join(name_parts[1:]) or "-"
 
-    new_user = models.User(
-        id=f"usr_{int(time.time() * 1000)}",
+    users_crud.create_user(
+        db,
         email=payload.email,
-        password=payload.password,
+        password=hash_password(payload.password),
         profileType="borrower",
         name=payload.name or "New Borrower",
         role="Borrower Account",
@@ -62,17 +53,13 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         inputPhone=payload.phone or "",
         inputResidency="",
     )
-    db.add(new_user)
-    db.commit()
     return login(LoginRequest(email=payload.email, password=payload.password), db)
 
 
 @router.post("/logout")
-def logout(authorization: str | None = Header(default=None), db: Session = Depends(get_db)):
-    token = _extract_token(authorization)
-    if token:
-        db.query(models.Session).filter(models.Session.token == token).delete()
-        db.commit()
+def logout():
+    # Stateless JWTs — nothing server-side to invalidate. The frontend just
+    # discards its stored token.
     return {"ok": True}
 
 
@@ -81,8 +68,8 @@ def get_current_user(authorization: str | None = Header(default=None), db: Sessi
     token = _extract_token(authorization)
     if not token:
         return None
-    session = db.query(models.Session).filter(models.Session.token == token).first()
-    if not session:
+    user_id = decode_user_id(token)
+    if not user_id:
         return None
-    user = db.query(models.User).filter(models.User.id == session.userId).first()
+    user = users_crud.get_user_by_id(db, user_id)
     return user_to_dict(user) if user else None

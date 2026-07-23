@@ -1,5 +1,6 @@
 import random
 import time
+from datetime import date
 
 
 def make_token(user_id: str) -> str:
@@ -7,7 +8,51 @@ def make_token(user_id: str) -> str:
 
 
 def next_advance_id() -> str:
-    return f"#ADV-2026-{random.randint(100, 999)}"
+    return f"#ADV-{date.today().year}-{random.randint(100, 999)}"
+
+
+def format_due_text(due_date: date | None) -> str:
+    """Renders an advance's dueDate relative to today, so it stays accurate
+    on every request instead of freezing whatever text was true at creation."""
+    if due_date is None:
+        return ""
+    delta = (due_date - date.today()).days
+    if delta > 0:
+        return f"Due in {delta} day{'s' if delta != 1 else ''}"
+    if delta == 0:
+        return "Due today"
+    overdue = abs(delta)
+    return f"Overdue {overdue} day{'s' if overdue != 1 else ''}"
+
+
+def format_calendar_date(d: date) -> str:
+    """'August 15, 2026' — avoids the platform-specific %-d / %#d strftime
+    flags needed to drop a leading zero from the day."""
+    return f"{d.strftime('%B')} {d.day}, {d.year}"
+
+
+
+
+def parse_currency(value: str) -> float:
+    """'R 1,000.00' -> 1000.0 — reverses the display formatting stored on
+    Advance.principal so it can be re-aggregated for dashboard KPIs."""
+    cleaned = value.replace("R", "").replace(",", "").strip()
+    try:
+        return float(cleaned)
+    except ValueError:
+        return 0.0
+
+
+def format_rand_whole(value: float) -> str:
+    return f"R {round(value):,}"
+
+
+def percent_change(old: float, new: float) -> float | None:
+    """None when there's no meaningful baseline to compare against (old==0)
+    rather than returning a nonsensical or infinite percentage."""
+    if old == 0:
+        return None
+    return (new - old) / old * 100
 
 
 def next_kyc_key() -> str:

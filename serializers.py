@@ -1,6 +1,7 @@
 """Shared helpers for turning ORM rows into the plain dicts the frontend expects."""
 
 import models
+from utils import format_due_text
 
 
 def user_to_dict(user: models.User) -> dict:
@@ -19,6 +20,11 @@ def user_to_dict(user: models.User) -> dict:
         "inputIdNumber": user.inputIdNumber,
         "inputPhone": user.inputPhone,
         "inputResidency": user.inputResidency,
+        "notifyEmail": user.notifyEmail,
+        "notifyPush": user.notifyPush,
+        "notifySms": user.notifySms,
+        "notifyNewsletter": user.notifyNewsletter,
+        "loginAlerts": user.loginAlerts,
     }
 
 
@@ -28,21 +34,43 @@ def advance_to_dict(advance: models.Advance) -> dict:
         "borrower": advance.borrower,
         "principal": advance.principal,
         "fee": advance.fee,
-        "due": advance.due,
+        "due": format_due_text(advance.dueDate),
         "status": advance.status,
         "statusIcon": advance.statusIcon,
         "statusClass": advance.statusClass,
     }
 
 
-def kyc_document_to_dict(doc: models.KycDocument) -> dict:
+def kyc_document_to_dict(doc: models.KycDocument, borrower_name: str | None = None) -> dict:
+    url = doc.filePath if doc.filePath.startswith("http") else f"/uploads/{doc.filePath}"
     return {
         "key": doc.key,
+        "borrowerId": doc.userId,
+        "borrowerName": borrower_name,
         "category": doc.category,
+        "categoryLabel": doc.categoryLabel,
         "fileName": doc.fileName,
         "status": doc.status,
         "type": doc.type,
-        "url": doc.url,
+        "url": url,
+    }
+
+
+def credit_score_to_dict(record: models.CreditScoreRecord) -> dict:
+    return {
+        "id": record.id,
+        "borrowerId": record.borrowerId,
+        "name": record.name,
+        "idNumber": record.idNumber,
+        "bureau": record.bureau,
+        "score": record.score,
+        "scoreScaleLabel": record.scoreScaleLabel,
+        "riskLabel": record.riskLabel,
+        "defaultJudgements": record.defaultJudgements,
+        "openFacilities": record.openFacilities,
+        "affordability": record.affordability,
+        "recommendedMaxAdvance": record.recommendedMaxAdvance,
+        "checkedAt": record.created_at.isoformat() if record.created_at else None,
     }
 
 
@@ -59,7 +87,3 @@ def payment_method_to_dict(method: models.PaymentMethod) -> dict:
         "label": method.label,
         "isPrimary": method.isPrimary,
     }
-
-
-def invoice_to_dict(invoice: models.Invoice) -> dict:
-    return {"id": invoice.id, "date": invoice.date, "amount": invoice.amount}

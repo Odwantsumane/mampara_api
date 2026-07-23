@@ -1,52 +1,36 @@
-import time
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-import models
+import crud.advances as advances_crud
+import crud.kyc as kyc_crud
+import crud.users as users_crud
 from db import get_db
 from schemas import AdvanceDecisionRequest, CreateAdvanceRequest
 from serializers import advance_to_dict
-from utils import next_advance_id
 
 router = APIRouter(prefix="/api/advances", tags=["advances"])
 
 
 @router.get("")
-def get_advance_book(profileType: str, borrowerName: str = "", db: Session = Depends(get_db)):
-    query = db.query(models.Advance)
-    if profileType == "borrower" and borrowerName:
-        query = query.filter(models.Advance.borrower == borrowerName)
-    rows = query.order_by(models.Advance.sortOrder.asc()).all()
+def get_advance_book(profileType: str, borrowerId: str = "", db: Session = Depends(get_db)):
+    rows = advances_crud.get_advance_book(db, profileType, borrowerId)
     return [advance_to_dict(row) for row in rows]
 
 
 @router.post("")
 def create_advance_application(payload: CreateAdvanceRequest, db: Session = Depends(get_db)):
-    fee = round(payload.principal * (payload.feePercent / 100), 2)
-    advance = models.Advance(
-        id=next_advance_id(),
-        borrower=payload.borrowerName,
-        principal=f"R {payload.principal:,.2f}",
-        fee=f"{payload.feePercent:g}% (R {fee:,.2f})",
-        due=f"Due in {payload.termDays} days",
-        status="Pending Approval",
-        statusIcon="bi-hourglass-split",
-        statusClass="secondary",
-        # newer advances sort first, same as the old mock's list.insert(0, ...)
-        sortOrder=-int(time.time() * 1000),
-    )
-    db.add(advance)
-    db.commit()
-    db.refresh(advance)
+    borrower = users_crud.get_user_by_id(db, payload.borrowerId)
+    if not borrower:
+        raise HTTPException(status_code=404, detail="Borrower not found.")
+
+    kyc_status = kyc_crud.get_kyc_completeness(db, payload.borrowerId)
+    if not kyc_status["complete"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Your KYC documents must be fully uploaded and approved before requesting an advance.",
+        )
+    advance = advances_crud.create_advance(db, borrower, payload.principal, payload.feePercent, payload.termDays)
     return advance_to_dict(advance)
-
-
-def _find_advance(db: Session, advance_id: str) -> models.Advance:
-    row = db.query(models.Advance).filter(models.Advance.id == advance_id).first()
-    if row is None:
-        raise HTTPException(status_code=404, detail="Advance not found.")
-    return row
 
 
 # advance ids look like "#ADV-2026-892" — the "#" makes them unsafe as a raw
@@ -54,21 +38,15 @@ def _find_advance(db: Session, advance_id: str) -> models.Advance:
 # passed in the request body instead of the path.
 @router.post("/approve")
 def approve_advance(payload: AdvanceDecisionRequest, db: Session = Depends(get_db)):
-    row = _find_advance(db, payload.id)
-    row.status = "Performing"
-    row.statusIcon = "bi-check-circle-fill"
-    row.statusClass = "success"
-    db.commit()
-    db.refresh(row)
-    return advance_to_dict(row)
+    advance = advances_crud.approve_advance(db, payload.id)
+    if not advance:
+        raise HTTPException(status_code=404, detail="Advance not found.")
+    return advance_to_dict(advance)
 
 
 @router.post("/decline")
 def decline_advance(payload: AdvanceDecisionRequest, db: Session = Depends(get_db)):
-    row = _find_advance(db, payload.id)
-    row.status = "Declined"
-    row.statusIcon = "bi-x-circle-fill"
-    row.statusClass = "danger"
-    db.commit()
-    db.refresh(row)
-    return advance_to_dict(row)
+    advance = advances_crud.decline_advance(db, payload.id)
+    if not advance:
+        raise HTTPException(status_code=404, detail="Advance not found.")
+    return advance_to_dict(advance)

@@ -4,20 +4,30 @@ seed_data.py. Safe to call every startup — it only inserts rows for tables
 that are still empty, so real data entered later is never overwritten.
 """
 
+from datetime import date, timedelta
+
 from sqlalchemy.orm import Session
 
 import models
 import seed_data
+from auth.userAuthentication import hash_password
 
 
 def seed_if_empty(db: Session) -> None:
     if db.query(models.User).count() == 0:
         for user in seed_data.users:
-            db.add(models.User(**user))
+            db.add(models.User(**{**user, "password": hash_password(user["password"])}))
+        # flush immediately: kyc_documents.userId is a FK to users.id, and
+        # without a relationship() between the two mappers the flush doesn't
+        # reliably order cross-table inserts by dependency (it sorted
+        # "kyc_documents" before "users" here), so force it explicitly.
+        db.flush()
 
     if db.query(models.Advance).count() == 0:
         for order, advance in enumerate(seed_data.advances):
-            db.add(models.Advance(**advance, sortOrder=order))
+            fields = {k: v for k, v in advance.items() if k != "dueInDays"}
+            due_date = date.today() + timedelta(days=advance["dueInDays"])
+            db.add(models.Advance(**fields, dueDate=due_date, sortOrder=order))
 
     if db.query(models.KycDocument).count() == 0:
         for doc in seed_data.kyc_queue:
@@ -25,16 +35,9 @@ def seed_if_empty(db: Session) -> None:
 
     if db.query(models.BillingProfile).count() == 0:
         for profile_type, profile in seed_data.billing.items():
-            db.add(models.BillingProfile(
-                profileType=profile_type,
-                planName=profile["planName"],
-                planPrice=profile["planPrice"],
-                renewsOn=profile["renewsOn"],
-            ))
+            db.add(models.BillingProfile(profileType=profile_type))
             for method in profile["paymentMethods"]:
                 db.add(models.PaymentMethod(profileType=profile_type, **method))
-            for invoice in profile["invoices"]:
-                db.add(models.Invoice(profileType=profile_type, **invoice))
 
     if db.query(models.PlatformSettings).count() == 0:
         db.add(models.PlatformSettings(id=1, **seed_data.default_settings))
@@ -49,8 +52,5 @@ def seed_if_empty(db: Session) -> None:
 
     if db.query(models.PublicTeaser).count() == 0:
         db.add(models.PublicTeaser(id=1, data=seed_data.public_teaser))
-
-    if db.query(models.CreditBureauTemplate).count() == 0:
-        db.add(models.CreditBureauTemplate(id=1, data=seed_data.credit_bureau_result))
 
     db.commit()

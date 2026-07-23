@@ -6,7 +6,7 @@ now just the seed, not the source of truth (MySQL is).
 
 users = [
     {
-        "id": "usr_admin_1",
+        "id": "67ed56a3-f687-4853-b7ba-998e97cbea30",
         "email": "sarah.jenkins@mampara.co.za",
         "password": "admin123",
         "profileType": "admin",
@@ -23,7 +23,7 @@ users = [
         "inputResidency": "12 Fredman Drive, Sandton, Johannesburg, 2196",
     },
     {
-        "id": "usr_borrower_1",
+        "id": "455c5daf-8797-42f8-95ce-6b02cedc3bf5",
         "email": "sipho.dlamini@gmail.com",
         "password": "borrower123",
         "profileType": "borrower",
@@ -121,95 +121,57 @@ public_teaser = {
 
 advances = [
     {
-        "id": "#ADV-2026-892", "borrower": "Sipho Dlamini", "principal": "R 650.00", "fee": "15% (R 97.50)",
-        "due": "Due in 9 days", "status": "Performing", "statusIcon": "bi-check-circle-fill", "statusClass": "success",
-    },
-    {
-        "id": "#ADV-2026-884", "borrower": "Nomusa Khumalo", "principal": "R 900.00", "fee": "20% (R 180.00)",
-        "due": "Due in 4 days", "status": "Performing", "statusIcon": "bi-check-circle-fill", "statusClass": "success",
-    },
-    {
-        "id": "#ADV-2026-851", "borrower": "Pieter van der Merwe", "principal": "R 500.00", "fee": "25% (R 125.00)",
-        "due": "Overdue 6 days", "status": "Late", "statusIcon": "bi-exclamation-triangle-fill", "statusClass": "warning",
-    },
-    {
-        "id": "#ADV-2026-810", "borrower": "Zanele Mokoena", "principal": "R 300.00", "fee": "30% (R 90.00)",
-        "due": "Overdue 21 days", "status": "Defaulted", "statusIcon": "bi-x-octagon-fill", "statusClass": "danger",
-    },
-    {
-        "id": "#ADV-2026-905", "borrower": "Kavesh Naidoo", "principal": "R 1,000.00", "fee": "15% (R 150.00)",
-        "due": "Awaiting sign-off", "status": "Pending Approval", "statusIcon": "bi-hourglass-split", "statusClass": "secondary",
+        "id": "#ADV-2026-892", "borrowerId": "455c5daf-8797-42f8-95ce-6b02cedc3bf5", "borrower": "Sipho Dlamini",
+        "principal": "R 650.00", "fee": "15% (R 97.50)",
+        "dueInDays": 9, "status": "Performing", "statusIcon": "bi-check-circle-fill", "statusClass": "success",
     },
 ]
 
 kyc_queue = [
     {
-        "key": "id_mock",
-        "category": "South African ID Document",
+        "key": "4781c031-b737-417f-a2b3-b7ff67bd4655",
+        "userId": "455c5daf-8797-42f8-95ce-6b02cedc3bf5",  # Sipho Dlamini
+        "category": "id_document",
+        "categoryLabel": "South African Green ID Book or Smart ID Card",
         "fileName": "Sipho_Dlamini_SmartID.pdf",
-        "status": "Verified",
+        "status": "Approved",
         "type": "image",
-        "url": "https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600&h=450&fit=crop",
+        "filePath": "https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600&h=450&fit=crop",
     },
     {
-        "key": "doc_mock",
-        "category": "Proof of Residence",
+        "key": "6156161b-ae37-4f69-8706-8ca5d8a89062",
+        "userId": "455c5daf-8797-42f8-95ce-6b02cedc3bf5",  # Sipho Dlamini
+        "category": "proof_of_residence",
+        "categoryLabel": "Proof of Residence (Utility Bill < 3 months)",
         "fileName": "City_Power_Bill_May2026.pdf",
         "status": "Pending Review",
         "type": "pdf",
-        "url": "",
+        "filePath": "",
     },
 ]
 
 billing = {
     "admin": {
-        "planName": "Growth Tier",
-        "planPrice": "R 249/mo",
-        "renewsOn": "August 15, 2026",
         "paymentMethods": [
             {
-                "id": "pm_seed_admin_card", "type": "card", "brand": "Mastercard", "last4": "4892",
+                "id": "08346c21-975e-4dcd-b1e2-4ab9e6688a56", "type": "card", "brand": "Mastercard", "last4": "4892",
                 "cardNumber": "5412750035478892", "cardholderName": "Sarah Jenkins", "expiry": "12/28",
                 "debitDate": "1", "isPrimary": True,
             },
-            {"id": "pm_seed_admin_paypal", "type": "paypal", "label": "PayPal (sarah.j@mampara.co.za)", "isPrimary": False},
-        ],
-        "invoices": [
-            {"id": "#INV-2026-07", "date": "Jul 15, 2026", "amount": "R 249.00"},
-            {"id": "#INV-2026-06", "date": "Jun 15, 2026", "amount": "R 249.00"},
-            {"id": "#INV-2026-05", "date": "May 15, 2026", "amount": "R 249.00"},
+            {"id": "8d1da62e-dd55-47dc-9729-e134fff7835c", "type": "paypal", "label": "PayPal (sarah.j@mampara.co.za)", "isPrimary": False},
         ],
     },
     "borrower": {
-        "planName": "Standard Borrower Tier",
-        "planPrice": "R 0/mo",
-        "renewsOn": "No recurring platform fee",
         "paymentMethods": [
             {
-                "id": "pm_seed_borrower_card", "type": "card", "brand": "Mastercard", "last4": "4892",
+                "id": "c86eb149-61d0-43dd-97b8-246a5ae9b29d", "type": "card", "brand": "Mastercard", "last4": "4892",
                 "cardNumber": "5412750035478892", "cardholderName": "Sipho Dlamini", "expiry": "12/28",
                 "debitDate": "25", "isPrimary": True,
             },
-            {"id": "pm_seed_borrower_paypal", "type": "paypal", "label": "PayPal (linked account)", "isPrimary": False},
-        ],
-        "invoices": [
-            {"id": "#ADV-2026-892", "date": "Jul 15, 2026", "amount": "R 97.50"},
-            {"id": "#ADV-2026-760", "date": "Jun 18, 2026", "amount": "R 60.00"},
-            {"id": "#ADV-2026-611", "date": "May 22, 2026", "amount": "R 45.00"},
+            {"id": "7bdf63c9-5791-4ecb-ac89-d5e4b2b34576", "type": "paypal", "label": "PayPal (linked account)", "isPrimary": False},
         ],
     },
 }
 
-credit_bureau_result = {
-    "name": "Sipho Dlamini",
-    "idNumber": "8805125890082",
-    "riskLabel": "Low Risk",
-    "score": 685,
-    "scoreScaleLabel": "Scale: 0 - 999 (Good Standing)",
-    "defaultJudgements": "None Recorded",
-    "openFacilities": "2 Active Accounts (R 480 exposure)",
-    "affordability": "Approved (R 350/pay-cycle headroom)",
-    "recommendedMaxAdvance": "R 1,000.00",
-}
 
-default_settings = {"advanceFeePercent": 15}
+default_settings = {"advanceFeePercent": 15, "universalAdvanceLimit": 1000}

@@ -1,12 +1,18 @@
+import pathlib
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 import models
 from db import SessionLocal, engine
-from routers import advances, auth, billing, credit_bureau, dashboard, kyc, profile, settings
+from routers import advances, auth, billing, borrowers, credit_bureau, dashboard, kyc, profile, settings
 from seed import seed_if_empty
 
 models.Base.metadata.create_all(bind=engine)
+
+UPLOAD_DIR = pathlib.Path("uploads")
+(UPLOAD_DIR / "approval").mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Mampara API", version="0.2.0")
 
@@ -23,6 +29,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serves uploaded KYC documents back to the frontend, e.g.
+# /uploads/approval/<borrowerId>/<file>.pdf
+app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
+
 
 @app.on_event("startup")
 def on_startup():
@@ -38,6 +48,7 @@ app.include_router(dashboard.router)
 app.include_router(advances.router)
 app.include_router(profile.router)
 app.include_router(kyc.router)
+app.include_router(borrowers.router)
 app.include_router(billing.router)
 app.include_router(credit_bureau.router)
 app.include_router(settings.router)

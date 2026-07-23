@@ -31,7 +31,7 @@ class ChangePasswordRequest(BaseModel):
 
 
 class CreateAdvanceRequest(BaseModel):
-    borrowerName: str
+    borrowerId: str
     principal: float
     feePercent: float
     termDays: int
@@ -39,13 +39,6 @@ class CreateAdvanceRequest(BaseModel):
 
 class AdvanceDecisionRequest(BaseModel):
     id: str
-
-
-class UploadKycDocumentRequest(BaseModel):
-    category: str
-    fileName: str
-    type: str
-    url: str = ""
 
 
 class AddPaymentMethodRequest(BaseModel):
@@ -71,4 +64,5 @@ class CreditCheckRequest(BaseModel):
 
 
 class UpdateSettingsRequest(BaseModel):
-    advanceFeePercent: float
+    advanceFeePercent: float | None = None
+    universalAdvanceLimit: float | None = None
