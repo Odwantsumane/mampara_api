@@ -9,7 +9,9 @@ def make_token(user_id: str) -> str:
 
 
 def next_advance_id() -> str:
-    return f"#ADV-{date.today().year}-{random.randint(100, 999)}"
+    # 6 digits (900,000 possibilities) rather than 3 (900) — the smaller
+    # range collided in practice under moderate advance-creation volume
+    return f"#ADV-{date.today().year}-{random.randint(100000, 999999)}"
 
 
 def format_due_text(due_date: date | None) -> str:

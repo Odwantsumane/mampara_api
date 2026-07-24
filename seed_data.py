@@ -95,17 +95,6 @@ dashboard_copy = {
     },
 }
 
-trend_chart_data = {
-    "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
-    "values": [3200, 4100, 3800, 4600, 5200, 4900, 5600],
-    "label": "Weekly Disbursement Volume (R)",
-}
-
-allocation_chart_data = {
-    "labels": ["New Advances", "Repeat Borrowers", "Rolled Over", "Settled Early"],
-    "values": [45, 30, 15, 10],
-}
-
 public_teaser = {
     "headline": "Get up to R 1,000 before payday — approved in minutes.",
     "sub": "Sign in or create a free account to see your personal advance offer, repayment date, and credit score.",
@@ -115,14 +104,17 @@ public_teaser = {
     "stat1": {"label": "Advances funded this month", "value": "2,481"},
     "stat2": {"label": "Average approval time", "value": "4 minutes"},
     "stat3": {"label": "Max advance available", "value": "R 1,000"},
-    "allocationLabels": ["New Advances", "Repeat Borrowers", "Rolled Over", "Settled Early"],
-    "allocationValues": [45, 30, 15, 10],
+    # allocationLabels/allocationValues are always computed fresh from real
+    # advance data in routers/dashboard.py::get_public_teaser — not seeded here
 }
 
 advances = [
     {
+        # kept under the new starter-tier cap (30% of the default R1,000
+        # universal limit = R300) so a freshly-seeded borrower isn't already
+        # over-extended relative to their own tier
         "id": "#ADV-2026-892", "borrowerId": "455c5daf-8797-42f8-95ce-6b02cedc3bf5", "borrower": "Sipho Dlamini",
-        "principal": "R 650.00", "fee": "15% (R 97.50)",
+        "principal": "R 200.00", "fee": "15% (R 30.00)",
         "dueInDays": 9, "status": "Performing", "statusIcon": "bi-check-circle-fill", "statusClass": "success",
     },
 ]

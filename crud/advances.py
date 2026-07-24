@@ -15,6 +15,17 @@ DISBURSED_STATUSES = {"Performing", "Late", "Defaulted"}
 # (rejected, never became a real commitment).
 COMMITTED_STATUSES = {"Performing", "Late", "Defaulted", "Pending Approval"}
 
+# Tiered advance limit: a first-time borrower is capped at a percentage of
+# the credit manager's universal limit; successfully repaying advances
+# (proving reliability) automatically unlocks a higher percentage. Expressed
+# as (repaid-advance-count threshold, percentage of the universal limit),
+# ascending by threshold.
+TIER_THRESHOLDS = [
+    (0, 0.30),
+    (5, 0.60),
+    (10, 1.00),
+]
+
 
 def get_advance_book(db: Session, profile_type: str, borrower_id: str = "") -> list[models.Advance]:
     query = db.query(models.Advance)
@@ -60,6 +71,50 @@ def get_borrower_committed_total(db: Session, borrower_id: str) -> float:
     their limit). Declined applications never happened, so they're excluded."""
     rows = db.query(models.Advance).filter(models.Advance.borrowerId == borrower_id).all()
     return sum(parse_currency(r.principal) for r in rows if r.status in COMMITTED_STATUSES)
+
+
+def get_repaid_advance_count(db: Session, borrower_id: str) -> int:
+    return (
+        db.query(models.Advance)
+        .filter(models.Advance.borrowerId == borrower_id, models.Advance.status == "Repaid")
+        .count()
+    )
+
+
+def get_tier_percentage(repaid_count: int) -> float:
+    percentage = TIER_THRESHOLDS[0][1]
+    for threshold, pct in TIER_THRESHOLDS:
+        if repaid_count >= threshold:
+            percentage = pct
+    return percentage
+
+
+def get_next_tier(repaid_count: int) -> tuple[int, float] | None:
+    """The (threshold, percentage) of the next tier still to unlock, or
+    None if the borrower is already at the top tier."""
+    for threshold, pct in TIER_THRESHOLDS:
+        if repaid_count < threshold:
+            return threshold, pct
+    return None
+
+
+def get_borrower_limit_info(db: Session, borrower_id: str, universal_limit: float) -> dict:
+    """Single source of truth for a borrower's tiered limit — both the
+    dashboard display and the advance-creation gate call this so the number
+    shown can never drift from the number actually enforced."""
+    repaid_count = get_repaid_advance_count(db, borrower_id)
+    tier_percentage = get_tier_percentage(repaid_count)
+    tier_limit = universal_limit * tier_percentage
+    committed_total = get_borrower_committed_total(db, borrower_id)
+    available_limit = max(tier_limit - committed_total, 0)
+    return {
+        "repaidCount": repaid_count,
+        "tierPercentage": tier_percentage,
+        "tierLimit": tier_limit,
+        "committedTotal": committed_total,
+        "availableLimit": available_limit,
+        "nextTier": get_next_tier(repaid_count),
+    }
 
 
 def record_daily_snapshot(db: Session, summary: dict) -> None:

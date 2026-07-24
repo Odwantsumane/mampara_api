@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 import crud.advances as advances_crud
+import crud.charts as charts_crud
 import crud.dashboard as dashboard_crud
 import crud.kyc as kyc_crud
 import crud.settings as settings_crud
@@ -36,10 +37,14 @@ def get_dashboard(
 
     available_limit = None
     kyc_status = None
+    trend = {"labels": [], "values": [], "label": ""}
+    allocation = {"labels": [], "values": []}
 
     if profileType == "admin":
         summary = advances_crud.get_portfolio_summary(db)
         advances_crud.record_daily_snapshot(db, summary)
+        trend = charts_crud.get_disbursement_trend(db)
+        allocation = charts_crud.get_status_breakdown(db)
 
         copy["card1Value"] = format_rand_whole(summary["activeTotal"])
         copy["card2Value"] = format_rand_whole(summary["pendingTotal"])
@@ -74,26 +79,34 @@ def get_dashboard(
             copy["card1SubText"] = "No active advance — apply from the calculator below"
 
         settings_row = settings_crud.get_settings(db)
-        committed_total = advances_crud.get_borrower_committed_total(db, borrowerId)
-        available_limit = max(settings_row.universalAdvanceLimit - committed_total, 0)
+        limit_info = advances_crud.get_borrower_limit_info(db, borrowerId, settings_row.universalAdvanceLimit)
+        available_limit = limit_info["availableLimit"]
+        tier_limit = limit_info["tierLimit"]
         copy["card2Value"] = format_rand_whole(available_limit)
-        if committed_total > 0:
+        if limit_info["committedTotal"] > 0:
             copy["card2Sub"] = (
-                f"{format_rand_whole(settings_row.universalAdvanceLimit)} limit "
-                f"— {format_rand_whole(committed_total)} already borrowed"
+                f"{format_rand_whole(tier_limit)} limit "
+                f"— {format_rand_whole(limit_info['committedTotal'])} already borrowed"
+            )
+        elif limit_info["nextTier"]:
+            next_threshold, next_percentage = limit_info["nextTier"]
+            remaining = next_threshold - limit_info["repaidCount"]
+            next_limit = settings_row.universalAdvanceLimit * next_percentage
+            copy["card2Sub"] = (
+                f"{format_rand_whole(tier_limit)} limit — repay {remaining} more advance"
+                f"{'s' if remaining != 1 else ''} to reach {format_rand_whole(next_limit)}"
             )
         else:
-            copy["card2Sub"] = "Pre-approved based on credit score"
+            copy["card2Sub"] = f"{format_rand_whole(tier_limit)} limit — maximum tier reached"
 
         kyc_status = kyc_crud.get_kyc_completeness(db, borrowerId)
-
-    trend = dashboard_crud.get_chart_data(db, "trend")
-    allocation = dashboard_crud.get_chart_data(db, "allocation")
+        trend = charts_crud.get_repayment_trend(db, borrowerId)
+        allocation = charts_crud.get_status_breakdown(db, borrowerId)
 
     return {
         "copy": copy,
-        "trendChart": trend.data,
-        "allocationChart": allocation.data,
+        "trendChart": trend,
+        "allocationChart": allocation,
         "availableLimit": available_limit,
         "kycStatus": kyc_status,
     }
@@ -101,4 +114,6 @@ def get_dashboard(
 
 @router.get("/public-teaser")
 def get_public_teaser(db: Session = Depends(get_db)):
-    return dashboard_crud.get_public_teaser(db).data
+    teaser = dashboard_crud.get_public_teaser(db).data
+    allocation = charts_crud.get_status_breakdown(db)
+    return {**teaser, "allocationLabels": allocation["labels"], "allocationValues": allocation["values"]}

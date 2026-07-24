@@ -46,10 +46,6 @@ def seed_if_empty(db: Session) -> None:
         for profile_type, copy in seed_data.dashboard_copy.items():
             db.add(models.DashboardCopy(profileType=profile_type, copy=copy))
 
-    if db.query(models.ChartData).count() == 0:
-        db.add(models.ChartData(id="trend", data=seed_data.trend_chart_data))
-        db.add(models.ChartData(id="allocation", data=seed_data.allocation_chart_data))
-
     if db.query(models.PublicTeaser).count() == 0:
         db.add(models.PublicTeaser(id=1, data=seed_data.public_teaser))
 

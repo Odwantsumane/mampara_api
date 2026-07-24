@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 import crud.advances as advances_crud
 import crud.kyc as kyc_crud
+import crud.settings as settings_crud
 import crud.users as users_crud
 from db import get_db
 from schemas import AdvanceDecisionRequest, CreateAdvanceRequest
@@ -29,6 +30,15 @@ def create_advance_application(payload: CreateAdvanceRequest, db: Session = Depe
             status_code=403,
             detail="Your KYC documents must be fully uploaded and approved before requesting an advance.",
         )
+
+    settings_row = settings_crud.get_settings(db)
+    limit_info = advances_crud.get_borrower_limit_info(db, payload.borrowerId, settings_row.universalAdvanceLimit)
+    if payload.principal > limit_info["availableLimit"]:
+        raise HTTPException(
+            status_code=403,
+            detail=f"This exceeds your available advance limit of R {limit_info['availableLimit']:,.2f}.",
+        )
+
     advance = advances_crud.create_advance(db, borrower, payload.principal, payload.feePercent, payload.termDays)
     return advance_to_dict(advance)
 

@@ -22,9 +22,5 @@ def get_borrower_active_advance(db: Session, borrower_id: str) -> models.Advance
     return min(active, key=lambda a: a.dueDate)
 
 
-def get_chart_data(db: Session, chart_id: str) -> models.ChartData | None:
-    return db.query(models.ChartData).filter(models.ChartData.id == chart_id).first()
-
-
 def get_public_teaser(db: Session) -> models.PublicTeaser:
     return db.query(models.PublicTeaser).filter(models.PublicTeaser.id == 1).first()

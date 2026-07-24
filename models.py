@@ -145,13 +145,6 @@ class DashboardCopy(Base, TimestampMixin):
     copy: Mapped[dict] = mapped_column(JSON)
 
 
-class ChartData(Base, TimestampMixin):
-    __tablename__ = "chart_data"
-
-    id: Mapped[str] = mapped_column(String(32), primary_key=True)  # 'trend' | 'allocation'
-    data: Mapped[dict] = mapped_column(JSON)
-
-
 class PublicTeaser(Base, TimestampMixin):
     __tablename__ = "public_teaser"
 
