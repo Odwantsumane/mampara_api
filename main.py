@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 import models
 from db import SessionLocal, engine
-from routers import advances, auth, billing, borrowers, credit_bureau, dashboard, kyc, profile, settings
+from routers import advances, auth, billing, borrowers, credit_bureau, dashboard, kyc, payments, profile, settings
 from seed import seed_if_empty
 
 models.Base.metadata.create_all(bind=engine)
@@ -51,6 +51,7 @@ app.include_router(kyc.router)
 app.include_router(borrowers.router)
 app.include_router(billing.router)
 app.include_router(credit_bureau.router)
+app.include_router(payments.router)
 app.include_router(settings.router)
 
 

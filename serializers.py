@@ -74,6 +74,19 @@ def credit_score_to_dict(record: models.CreditScoreRecord) -> dict:
     }
 
 
+def payment_to_dict(payment: models.Payment, borrower_name: str | None = None) -> dict:
+    return {
+        "id": payment.id,
+        "reference": payment.reference,
+        "advanceId": payment.advanceId,
+        "borrowerId": payment.borrowerId,
+        "borrowerName": borrower_name,
+        "amount": payment.amount,
+        "status": payment.status,
+        "createdAt": payment.created_at.isoformat() if payment.created_at else None,
+    }
+
+
 def payment_method_to_dict(method: models.PaymentMethod) -> dict:
     return {
         "id": method.id,

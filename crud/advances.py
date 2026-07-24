@@ -144,3 +144,15 @@ def decline_advance(db: Session, advance_id: str) -> models.Advance | None:
     db.commit()
     db.refresh(advance)
     return advance
+
+
+def mark_advance_repaid(db: Session, advance_id: str) -> models.Advance | None:
+    advance = get_advance_by_id(db, advance_id)
+    if not advance:
+        return None
+    advance.status = "Repaid"
+    advance.statusIcon = "bi-patch-check-fill"
+    advance.statusClass = "info"
+    db.commit()
+    db.refresh(advance)
+    return advance

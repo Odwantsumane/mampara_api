@@ -66,3 +66,8 @@ class CreditCheckRequest(BaseModel):
 class UpdateSettingsRequest(BaseModel):
     advanceFeePercent: float | None = None
     universalAdvanceLimit: float | None = None
+
+
+class InitializePaymentRequest(BaseModel):
+    advanceId: str
+    borrowerId: str

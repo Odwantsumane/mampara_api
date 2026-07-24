@@ -61,6 +61,21 @@ class Advance(Base, TimestampMixin, UpdatedAtMixin):
     sortOrder: Mapped[int] = mapped_column(BigInteger, default=0)
 
 
+class Payment(Base, TimestampMixin, UpdatedAtMixin):
+    """One row per Paystack (or mock) checkout attempt against an advance's
+    repayment — the reference is the gateway's own transaction reference."""
+
+    __tablename__ = "payments"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    reference: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    advanceId: Mapped[str] = mapped_column(String(32), ForeignKey("advances.id"), index=True)
+    borrowerId: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
+    amount: Mapped[float] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(32), default="Pending")  # Pending | Success | Failed
+    authorizationUrl: Mapped[str] = mapped_column(String(500), default="")
+
+
 class KycDocument(Base, TimestampMixin, UpdatedAtMixin):
     __tablename__ = "kyc_documents"
 

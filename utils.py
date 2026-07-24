@@ -1,4 +1,5 @@
 import random
+import re
 import time
 from datetime import date
 
@@ -41,6 +42,15 @@ def parse_currency(value: str) -> float:
         return float(cleaned)
     except ValueError:
         return 0.0
+
+
+def parse_fee_amount(value: str) -> float:
+    """'15% (R 97.50)' -> 97.50 — extracts the rand amount embedded in the
+    parenthesized part of Advance.fee's display string."""
+    match = re.search(r"\(R\s*([\d,]+\.?\d*)\)", value)
+    if not match:
+        return 0.0
+    return float(match.group(1).replace(",", ""))
 
 
 def format_rand_whole(value: float) -> str:
