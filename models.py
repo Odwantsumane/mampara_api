@@ -62,8 +62,9 @@ class Advance(Base, TimestampMixin, UpdatedAtMixin):
 
 
 class Payment(Base, TimestampMixin, UpdatedAtMixin):
-    """One row per Paystack (or mock) checkout attempt against an advance's
-    repayment — the reference is the gateway's own transaction reference."""
+    """One row per manual-EFT repayment request — the borrower is shown the
+    reference + bank details and pays outside the app; an admin confirms
+    receipt by hand once it lands in the real bank account."""
 
     __tablename__ = "payments"
 
@@ -72,8 +73,7 @@ class Payment(Base, TimestampMixin, UpdatedAtMixin):
     advanceId: Mapped[str] = mapped_column(String(32), ForeignKey("advances.id"), index=True)
     borrowerId: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True)
     amount: Mapped[float] = mapped_column(Float)
-    status: Mapped[str] = mapped_column(String(32), default="Pending")  # Pending | Success | Failed
-    authorizationUrl: Mapped[str] = mapped_column(String(500), default="")
+    status: Mapped[str] = mapped_column(String(32), default="Pending")  # Pending | Confirmed | Cancelled
 
 
 class KycDocument(Base, TimestampMixin, UpdatedAtMixin):
@@ -136,6 +136,13 @@ class PlatformSettings(Base, TimestampMixin, UpdatedAtMixin):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
     advanceFeePercent: Mapped[float] = mapped_column(Float, default=15)
     universalAdvanceLimit: Mapped[float] = mapped_column(Float, default=1000)
+    # the credit manager's own bank account, shown to a borrower only at the
+    # moment they request a repayment — never exposed via the general
+    # settings endpoint every signed-in user calls
+    bankName: Mapped[str] = mapped_column(String(255), default="")
+    accountHolderName: Mapped[str] = mapped_column(String(255), default="")
+    accountNumber: Mapped[str] = mapped_column(String(64), default="")
+    branchCode: Mapped[str] = mapped_column(String(32), default="")
 
 
 class DashboardCopy(Base, TimestampMixin):

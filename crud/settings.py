@@ -17,3 +17,15 @@ def update_settings(
         row.universalAdvanceLimit = universal_advance_limit
     db.commit()
     return row
+
+
+def update_bank_details(
+    db: Session, bank_name: str, account_holder_name: str, account_number: str, branch_code: str
+) -> models.PlatformSettings:
+    row = get_settings(db)
+    row.bankName = bank_name
+    row.accountHolderName = account_holder_name
+    row.accountNumber = account_number
+    row.branchCode = branch_code
+    db.commit()
+    return row

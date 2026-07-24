@@ -13,14 +13,7 @@ CREDIT_BUREAU_API_URL = os.environ.get(
     "CREDIT_BUREAU_API_URL", "http://localhost:8000/api/credit-bureau/mock-lookup"
 )
 
-# Paystack payment gateway. Defaults to this API's own mock gateway routes
-# (routers/payments.py's "/mock-paystack/..." endpoints) so advance repayment
-# works out of the box in dev/demo. Point PAYSTACK_BASE_URL at Paystack's real
-# API (https://api.paystack.co) and set real PAYSTACK_SECRET_KEY /
-# PAYSTACK_PUBLIC_KEY env vars once you have a real Paystack account —
-# request/response shapes already mirror Paystack's actual API.
-PAYSTACK_BASE_URL = os.environ.get("PAYSTACK_BASE_URL", "http://localhost:8000/api/payments/mock-paystack")
-PAYSTACK_SECRET_KEY = os.environ.get("PAYSTACK_SECRET_KEY", "sk_test_mock_not_a_real_key")
-PAYSTACK_PUBLIC_KEY = os.environ.get("PAYSTACK_PUBLIC_KEY", "pk_test_mock_not_a_real_key")
-# Where the gateway redirects the browser back to after checkout completes.
-PAYSTACK_CALLBACK_URL = os.environ.get("PAYSTACK_CALLBACK_URL", "http://localhost:5173")
+# Advance repayments are collected as manual EFTs straight into the credit
+# manager's own bank account (configured in PlatformSettings, editable from
+# the admin's Profile & Settings page) rather than through a third-party
+# payment gateway — see routers/payments.py.

@@ -68,6 +68,13 @@ class UpdateSettingsRequest(BaseModel):
     universalAdvanceLimit: float | None = None
 
 
-class InitializePaymentRequest(BaseModel):
+class RequestPaymentRequest(BaseModel):
     advanceId: str
     borrowerId: str
+
+
+class UpdateBankDetailsRequest(BaseModel):
+    bankName: str
+    accountHolderName: str
+    accountNumber: str
+    branchCode: str
